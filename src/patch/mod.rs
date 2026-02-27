@@ -21,29 +21,29 @@ impl<T: Eq + Clone> HunkBuilder<T> {
             current: None,
             trailing_equal_count: 0,
             context_buffer: VecDeque::new(),
-            hunks: vec![]
+            hunks: vec![],
         }
     }
 
     fn process(&mut self, edit: Edit<T>) {
         match edit {
             Edit::Equal(el) => {
-              self.context_buffer.push_back(Edit::Equal(el.clone()));
-              while self.context_buffer.len() > 3 {
-                self.context_buffer.pop_front();
-              }
+                self.context_buffer.push_back(Edit::Equal(el.clone()));
+                while self.context_buffer.len() > 3 {
+                    self.context_buffer.pop_front();
+                }
 
-              if let Some(ref mut c) = self.current {
-                  c.changes.push(Edit::Equal(el));
-                  self.trailing_equal_count += 1;
-                  if self.trailing_equal_count >= 3 {
-                    self.hunks.push(self.current.take().unwrap());
-                    self.current = None;
-                  }
-              }
-              self.old_line += 1;
-              self.new_line += 1;
-            },
+                if let Some(ref mut c) = self.current {
+                    c.changes.push(Edit::Equal(el));
+                    self.trailing_equal_count += 1;
+                    if self.trailing_equal_count >= 3 {
+                        self.hunks.push(self.current.take().unwrap());
+                        self.current = None;
+                    }
+                }
+                self.old_line += 1;
+                self.new_line += 1;
+            }
             modify => {
                 self.trailing_equal_count = 0;
                 if let Some(ref mut c) = self.current {
@@ -56,13 +56,16 @@ impl<T: Eq + Clone> HunkBuilder<T> {
                         changes.push(e);
                     }
                     changes.push(modify.clone());
-                    self.current = Some(Hunk {old_start, new_start, changes});
+                    self.current = Some(Hunk {
+                        old_start,
+                        new_start,
+                        changes,
+                    });
                 };
 
                 match modify {
-                    Edit::Insert(_) =>
-                        self.new_line += 1,
-                    _ => self.old_line += 1
+                    Edit::Insert(_) => self.new_line += 1,
+                    _ => self.old_line += 1,
                 }
             }
         }
@@ -115,9 +118,18 @@ mod tests {
     fn test_single_hunk() {
         let old = vec![1, 2, 3, 4, 5];
         let new = vec![1, 2, 99, 4, 5];
-        let expected_hunks = vec![
-            Hunk { old_start: 0, new_start: 0, changes: vec![Edit::Equal(1), Edit::Equal(2), Edit::Insert(99), Edit::Delete(3), Edit::Equal(4), Edit::Equal(5)] }
-        ];
+        let expected_hunks = vec![Hunk {
+            old_start: 0,
+            new_start: 0,
+            changes: vec![
+                Edit::Equal(1),
+                Edit::Equal(2),
+                Edit::Insert(99),
+                Edit::Delete(3),
+                Edit::Equal(4),
+                Edit::Equal(5),
+            ],
+        }];
         let edits = diff(&old, &new);
         let result = hunks(edits);
         assert_eq!(result, expected_hunks);
@@ -129,8 +141,28 @@ mod tests {
         let old = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         let new = vec![99, 2, 3, 4, 5, 6, 7, 8, 9, 99];
         let expected_hunks = vec![
-            Hunk { old_start: 0, new_start: 0, changes: vec![Edit::Insert(99), Edit::Delete(1), Edit::Equal(2), Edit::Equal(3), Edit::Equal(4)] },
-            Hunk { old_start: 6, new_start: 6, changes: vec![Edit::Equal(7), Edit::Equal(8), Edit::Equal(9), Edit::Insert(99), Edit::Delete(10)] },
+            Hunk {
+                old_start: 0,
+                new_start: 0,
+                changes: vec![
+                    Edit::Insert(99),
+                    Edit::Delete(1),
+                    Edit::Equal(2),
+                    Edit::Equal(3),
+                    Edit::Equal(4),
+                ],
+            },
+            Hunk {
+                old_start: 6,
+                new_start: 6,
+                changes: vec![
+                    Edit::Equal(7),
+                    Edit::Equal(8),
+                    Edit::Equal(9),
+                    Edit::Insert(99),
+                    Edit::Delete(10),
+                ],
+            },
         ];
         let edits = diff(&old, &new);
         let result = hunks(edits);
@@ -141,9 +173,17 @@ mod tests {
     fn test_change_at_start() {
         let old = vec![1, 2, 3, 4, 5];
         let new = vec![99, 2, 3, 4, 5];
-        let expected_hunks = vec![
-            Hunk { old_start: 0, new_start: 0, changes: vec![Edit::Insert(99), Edit::Delete(1), Edit::Equal(2), Edit::Equal(3), Edit::Equal(4)] }
-        ];
+        let expected_hunks = vec![Hunk {
+            old_start: 0,
+            new_start: 0,
+            changes: vec![
+                Edit::Insert(99),
+                Edit::Delete(1),
+                Edit::Equal(2),
+                Edit::Equal(3),
+                Edit::Equal(4),
+            ],
+        }];
         let edits = diff(&old, &new);
         let result = hunks(edits);
         assert_eq!(result, expected_hunks);
@@ -153,9 +193,17 @@ mod tests {
     fn test_change_at_end() {
         let old = vec![1, 2, 3, 4, 5];
         let new = vec![1, 2, 3, 4, 99];
-        let expected_hunks = vec![
-            Hunk { old_start: 1, new_start: 1, changes: vec![Edit::Equal(2), Edit::Equal(3), Edit::Equal(4), Edit::Insert(99), Edit::Delete(5)] }
-        ];
+        let expected_hunks = vec![Hunk {
+            old_start: 1,
+            new_start: 1,
+            changes: vec![
+                Edit::Equal(2),
+                Edit::Equal(3),
+                Edit::Equal(4),
+                Edit::Insert(99),
+                Edit::Delete(5),
+            ],
+        }];
         let edits = diff(&old, &new);
         let result = hunks(edits);
         assert_eq!(result, expected_hunks);
