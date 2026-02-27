@@ -1,5 +1,7 @@
 # patchwork
 
+[![Build Status](https://github.com/sphaso/patchwork/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sphaso/patchwork/actions/workflows/ci.yml)
+
 A Rust library for diffing and patching sequences and nested structures.
 
 ## Features
