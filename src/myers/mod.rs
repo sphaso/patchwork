@@ -1,13 +1,7 @@
+pub mod types;
+pub use types::*;
+
 use std::cmp::max;
-
-type Diff<T> = Vec<Edit<T>>;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Edit<T> {
-    Insert(T),
-    Delete(T),
-    Equal(T),
-}
 
 #[derive(Clone)]
 struct V {
@@ -138,29 +132,29 @@ mod tests {
             let deletes = result.iter().filter(|c| matches!(c, Edit::Delete(_))).count();
             let equals = result.iter().filter(|c| matches!(c, Edit::Equal(_))).count();
             let inserts = result.iter().filter(|c| matches!(c, Edit::Insert(_))).count();
-            assert_eq!(old.len(), deletes + equals);
-            assert_eq!(new.len(), inserts + equals);
+            prop_assert_eq!(old.len(), deletes + equals);
+            prop_assert_eq!(new.len(), inserts + equals);
         }
 
         #[test]
         fn test_idempotency(els: Vec<u8>) {
             let result = diff(&els, &els);
             let expected : Diff<u8> = els.iter().map(|e| Edit::Equal(e.clone())).collect();
-            assert_eq!(result, expected);
+            prop_assert_eq!(result, expected);
         }
 
         #[test]
         fn test_new_empty(els: Vec<u8>) {
             let result = diff(&els, &Vec::new());
             let expected : Diff<u8> = els.iter().map(|e| Edit::Delete(e.clone())).collect();
-            assert_eq!(result, expected);
+            prop_assert_eq!(result, expected);
         }
 
         #[test]
         fn test_old_empty(els: Vec<u8>) {
             let result = diff(&Vec::new(), &els);
             let expected : Diff<u8> = els.iter().map(|e| Edit::Insert(e.clone())).collect();
-            assert_eq!(result, expected);
+            prop_assert_eq!(result, expected);
         }
 
         #[test]
@@ -174,9 +168,9 @@ mod tests {
             let inserts = result.iter().filter(|c| matches!(c, Edit::Insert(_))).count();
             let inserts_2 = result_2.iter().filter(|c| matches!(c, Edit::Insert(_))).count();
 
-            assert_eq!(equals, equals_2);
-            assert_eq!(inserts, deletes_2);
-            assert_eq!(deletes, inserts_2);
+            prop_assert_eq!(equals, equals_2);
+            prop_assert_eq!(inserts, deletes_2);
+            prop_assert_eq!(deletes, inserts_2);
         }
     }
 
