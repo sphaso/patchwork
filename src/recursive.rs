@@ -1,3 +1,4 @@
+use crate::myers::Edit;
 use std::collections::HashMap;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -19,6 +20,7 @@ pub enum ChangeKind<P: Primitive> {
     Removed(P),
     StructureRemoved(Node<P>),
     Modified(P, P), // old, new
+    SequenceChange(Vec<Edit<Node<P>>>),
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -42,10 +44,10 @@ impl<T: Diffable> Diffable for Vec<T> {
         Node::Sequence(self.iter().map(|e| e.to_node()).collect())
     }
 
-    fn from_node(node : Node<Self::P>) -> Self {
+    fn from_node(node: Node<Self::P>) -> Self {
         match node {
             Node::Sequence(v) => v.into_iter().map(|e| T::from_node(e)).collect(),
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
@@ -56,10 +58,10 @@ impl<T: Diffable> Diffable for HashMap<String, T> {
         Node::Map(self.iter().map(|(k, v)| (k.clone(), v.to_node())).collect())
     }
 
-    fn from_node(node : Node<Self::P>) -> Self {
+    fn from_node(node: Node<Self::P>) -> Self {
         match node {
             Node::Map(v) => v.into_iter().map(|(k, v)| (k, T::from_node(v))).collect(),
-            _ => unreachable!()
+            _ => unreachable!(),
         }
     }
 }
