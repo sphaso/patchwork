@@ -26,6 +26,12 @@ impl V {
     }
 }
 
+pub fn diff_lines(old: &str, new: &str) -> Diff<String> {
+    let old_lines: Vec<String> = old.split('\n').map(|l| l.to_string()).collect();
+    let new_lines: Vec<String> = new.split('\n').map(|l| l.to_string()).collect();
+    diff(&old_lines, &new_lines)
+}
+
 pub fn diff<T: Eq + Clone>(old: &[T], new: &[T]) -> Diff<T> {
     if old.is_empty() {
         return new.iter().map(|e| Edit::Insert(e.clone())).collect();
@@ -165,6 +171,22 @@ mod tests {
             prop_assert_eq!(inserts, deletes_2);
             prop_assert_eq!(deletes, inserts_2);
         }
+    }
+
+    #[test]
+    fn test_diff_lines() {
+        let old = "hello\nworld\nfoo";
+        let new = "hello\nrust\nfoo";
+        let result = diff_lines(old, new);
+        assert_eq!(
+            result,
+            vec![
+                Edit::Equal("hello".to_string()),
+                Edit::Insert("rust".to_string()),
+                Edit::Delete("world".to_string()),
+                Edit::Equal("foo".to_string()),
+            ]
+        );
     }
 
     #[test]
