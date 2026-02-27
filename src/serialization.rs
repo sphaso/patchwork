@@ -1,17 +1,33 @@
 use crate::myers::Edit;
 use crate::patch::Hunk;
 
+/// Serializes changes into the [unified diff format](https://en.wikipedia.org/wiki/Diff#Unified_format).
+///
+/// `old_name` and `new_name` are optional file names for the `---`/`+++` header.
+/// Defaults to `"old"` and `"new"` if not provided.
+///
+/// Implemented for `Edit<T>`, `Hunk<T>`, and `Vec<Hunk<T>>`.
 pub trait ToPatch: Sized {
     fn to_patch(&self, old_name: Option<&str>, new_name: Option<&str>) -> String;
 }
 
+/// Deserializes a unified diff patch into a structure.
+/// Restricted to `String` values since patches are text-based.
+///
+/// Returns [`PatchError`] if the input is malformed.
+///
+/// Implemented for `Edit<String>` and `Vec<Hunk<String>>`.
 pub trait FromPatch: Sized {
     fn from_patch(s: &str) -> Result<Self, PatchError>;
 }
 
+/// Represents an error parsing or applying a diff
 #[derive(Debug, PartialEq)]
 pub enum PatchError {
+    /// The patch is structurally invalid, e.g. missing `---`/`+++` header.
+    /// The patch cannot be applied to the given structure.
     InvalidFormat(String),
+    /// A line in the patch starts with an unexpected character.
     UnexpectedToken(String),
 }
 

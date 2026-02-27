@@ -4,6 +4,7 @@ pub use types::*;
 use crate::myers::Edit;
 use crate::serialization::PatchError;
 use std::collections::VecDeque;
+use std::fmt::Display;
 
 struct HunkBuilder<T> {
     old_line: usize,
@@ -80,6 +81,27 @@ impl<T: Eq + Clone> HunkBuilder<T> {
     }
 }
 
+/// Generates hunks from a Myers Diff
+/// ```
+///  use patchwork::myers::{diff, Edit};
+///  use patchwork::patch::{Hunk, hunks};
+///
+///  let old = vec![1, 2, 3];
+///  let new = vec![1, 2, 99];
+///  let expected_hunks = vec![Hunk {
+///      old_start: 0,
+///      new_start: 0,
+///      changes: vec![
+///          Edit::Equal(1),
+///          Edit::Equal(2),
+///          Edit::Insert(99),
+///          Edit::Delete(3)
+///      ],
+///  }];
+///  let edits = diff(&old, &new);
+///  let result = hunks(edits);
+///  assert_eq!(result, expected_hunks);
+/// ```
 pub fn hunks<T: Eq + Clone>(edits: Vec<Edit<T>>) -> Vec<Hunk<T>> {
     let mut builder = HunkBuilder::new();
     for edit in edits {
@@ -88,7 +110,29 @@ pub fn hunks<T: Eq + Clone>(edits: Vec<Edit<T>>) -> Vec<Hunk<T>> {
     builder.finish()
 }
 
-pub fn apply(old: &[String], hunks: &[Hunk<String>]) -> Result<Vec<String>, PatchError> {
+/// Applies a list of hunks to an input
+/// Can return a PatchError in case of mismatches between hunks and input
+/// ```
+///  use patchwork::myers::{diff, Edit};
+///  use patchwork::patch::{apply, Hunk};
+///
+///  let old = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+///  let bad_hunk = Hunk {
+///      old_start: 0,
+///      new_start: 0,
+///      changes: vec![
+///          Edit::Equal("x".to_string()), // but old[0] is "a", mismatch!
+///          Edit::Delete("y".to_string()),
+///          Edit::Insert("z".to_string()),
+///      ],
+///  };
+///  let result = apply(&old, &[bad_hunk]);
+///  assert!(result.is_err());
+/// ```
+pub fn apply<T: PartialEq + Display + Clone>(
+    old: &[T],
+    hunks: &[Hunk<T>],
+) -> Result<Vec<T>, PatchError> {
     if old.is_empty() {
         return Ok(hunks
             .iter()
@@ -183,27 +227,6 @@ mod tests {
             let result = apply(&old, &hunks);
             assert_eq!(result, Ok(new));
         }
-    }
-
-    #[test]
-    fn test_single_hunk() {
-        let old = vec![1, 2, 3, 4, 5];
-        let new = vec![1, 2, 99, 4, 5];
-        let expected_hunks = vec![Hunk {
-            old_start: 0,
-            new_start: 0,
-            changes: vec![
-                Edit::Equal(1),
-                Edit::Equal(2),
-                Edit::Insert(99),
-                Edit::Delete(3),
-                Edit::Equal(4),
-                Edit::Equal(5),
-            ],
-        }];
-        let edits = diff(&old, &new);
-        let result = hunks(edits);
-        assert_eq!(result, expected_hunks);
     }
 
     #[test]

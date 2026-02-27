@@ -8,6 +8,24 @@ use crate::myers;
 use crate::myers::Edit;
 use std::collections::{HashMap, HashSet};
 
+/// Builds a list of changes for two nodes.
+/// ```
+/// use std::collections::HashMap;
+/// use patchwork::recursive::{diff, Change, PathSegment, ChangeKind};
+///
+/// let mut a = HashMap::new();
+/// a.insert("a".to_string(), 1);
+/// let mut b = HashMap::new();
+/// b.insert("a".to_string(), 2);
+/// let result = diff(&a, &b);
+/// assert_eq!(
+///     result,
+///     vec![Change {
+///         path: vec![PathSegment::Key("a".to_string())],
+///         kind: ChangeKind::Modified(1, 2)
+///     }]
+/// );
+/// ```
 pub fn diff<T: Diffable>(old: &T, new: &T) -> Vec<Change<T::P>> {
     diff_nodes(old.to_node(), new.to_node(), vec![])
 }
@@ -84,6 +102,7 @@ fn diff_nodes<P: Primitive>(old: Node<P>, new: Node<P>, path: Vec<PathSegment>) 
     }
 }
 
+/// Applies a list of changes to an input. Reverse of `diff`
 pub fn apply<T: Diffable>(old: &T, changes: &[Change<T::P>]) -> T {
     let new_node = changes.iter().fold(old.to_node(), apply_change);
     T::from_node(new_node)
@@ -150,22 +169,6 @@ fn apply_to_sequence<P: Primitive>(edits: Vec<Edit<Node<P>>>) -> Node<P> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_leaf_modified() {
-        let mut a = HashMap::new();
-        a.insert("a".to_string(), 1);
-        let mut b = HashMap::new();
-        b.insert("a".to_string(), 2);
-        let result = diff(&a, &b);
-        assert_eq!(
-            result,
-            vec![Change {
-                path: vec![PathSegment::Key("a".to_string())],
-                kind: ChangeKind::Modified(1, 2)
-            }]
-        );
-    }
 
     #[test]
     fn test_key_added() {

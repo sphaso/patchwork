@@ -26,12 +26,36 @@ impl V {
     }
 }
 
+/// Computes the diff between two strings after breaking them into newlines
+/// and running `diff`.
 pub fn diff_lines(old: &str, new: &str) -> Diff<String> {
     let old_lines: Vec<String> = old.split('\n').map(|l| l.to_string()).collect();
     let new_lines: Vec<String> = new.split('\n').map(|l| l.to_string()).collect();
     diff(&old_lines, &new_lines)
 }
 
+/// Computes the diff between two sequences using the Myers algorithm.
+///
+/// # Examples
+///
+/// ```
+/// use patchwork::myers::{diff, Edit};
+///
+/// let old = vec![1, 2, 3];
+/// let new = vec![1, 3, 4];
+/// let result = diff(&old, &new);
+/// assert_eq!(result, vec![
+///     Edit::Equal(1),
+///     Edit::Delete(2),
+///     Edit::Equal(3),
+///     Edit::Insert(4),
+/// ]);
+/// ```
+///
+/// # Arguments
+///
+/// * `old` - The original sequence
+/// * `new` - The new sequence
 pub fn diff<T: Eq + Clone>(old: &[T], new: &[T]) -> Diff<T> {
     if old.is_empty() {
         return new.iter().map(|e| Edit::Insert(e.clone())).collect();

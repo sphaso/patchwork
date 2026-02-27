@@ -2,6 +2,13 @@
 name = "patchwork"
 version = "0.1.0"
 edition = "2021"
+authors = ["Giovanni Ornaghi <giovanni.ornaghi@gmail.com>"]
+description = "A library for diffing and patching sequences and nested structures"
+license = "Unlicense"
+repository = "https://github.com/sphaso/patchwork"
+readme = "README.md"
+keywords = ["diff", "patch", "myers", "config"]
+categories = ["algorithms", "data-structures"]
 
 [dev-dependencies]
 proptest = "1"

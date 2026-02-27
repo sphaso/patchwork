@@ -1,6 +1,14 @@
 use crate::recursive::types::*;
 use std::collections::HashMap;
 
+/// Trait to transform a given structure into a `[Node]` tree or viceversa.
+///
+/// Exposes two functions:
+/// `to_node` transforms a structure into a `[Node]` tree
+/// `from_node` transforms a `[Node]` tree into the initial structure
+///
+/// It's implemented for `Vec<T>`, `HashMap<String, T>` where T : Diffable
+/// as well as Rust primitives except floats which lack `[Eq]`.
 pub trait Diffable {
     type P: Primitive;
     fn to_node(&self) -> Node<Self::P>;
