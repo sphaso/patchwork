@@ -91,7 +91,7 @@ pub fn hunks<T: Eq + Clone>(edits: Vec<Edit<T>>) -> Vec<Hunk<T>> {
 pub fn apply(old: &[String], hunks: &[Hunk<String>]) -> Result<Vec<String>, PatchError> {
     if old.is_empty() {
         return Ok(hunks
-            .into_iter()
+            .iter()
             .flat_map(|h| h.changes.iter())
             .filter_map(|e| match e {
                 Edit::Insert(t) => Some(t.clone()),

@@ -53,7 +53,7 @@ fn diff_nodes<P: Primitive>(old: Node<P>, new: Node<P>, path: Vec<PathSegment>) 
                             }],
                             ve => vec![Change {
                                 path: new_path,
-                                kind: ChangeKind::StructureRemoved(ve.clone()),
+                                kind: ChangeKind::NodeRemoved(ve.clone()),
                             }],
                         },
                         (None, Some(vb)) => match vb {
@@ -63,7 +63,7 @@ fn diff_nodes<P: Primitive>(old: Node<P>, new: Node<P>, path: Vec<PathSegment>) 
                             }],
                             ve => vec![Change {
                                 path: new_path,
-                                kind: ChangeKind::StructureAdded(ve.clone()),
+                                kind: ChangeKind::NodeAdded(ve.clone()),
                             }],
                         },
                         (None, None) => unreachable!(),
@@ -74,20 +74,18 @@ fn diff_nodes<P: Primitive>(old: Node<P>, new: Node<P>, path: Vec<PathSegment>) 
         (old, new) => vec![
             Change {
                 path: path.clone(),
-                kind: ChangeKind::StructureRemoved(old),
+                kind: ChangeKind::NodeRemoved(old),
             },
             Change {
                 path,
-                kind: ChangeKind::StructureAdded(new),
+                kind: ChangeKind::NodeAdded(new),
             },
         ],
     }
 }
 
 pub fn apply<T: Diffable>(old: &T, changes: &[Change<T::P>]) -> T {
-    let new_node = changes
-        .iter()
-        .fold(old.to_node(), |acc, e| apply_change(acc, e));
+    let new_node = changes.iter().fold(old.to_node(), apply_change);
     T::from_node(new_node)
 }
 
@@ -112,7 +110,7 @@ fn apply_to_map<P: Primitive>(
     key: &String,
     change: &Change<P>,
 ) -> Node<P> {
-    let mut new_map = map.clone();
+    let mut new_map = map;
     let node = if change.path.len() > 1 {
         let new_change = Change {
             kind: change.kind.clone(),
@@ -120,17 +118,15 @@ fn apply_to_map<P: Primitive>(
         };
         new_map.insert(
             key.to_string(),
-            apply_change(map.get(key).unwrap().clone(), &new_change),
+            apply_change(new_map.get(key).unwrap().clone(), &new_change),
         );
         new_map
     } else {
         match &change.kind {
-            ChangeKind::StructureAdded(new) => new_map.insert(key.to_string(), new.clone()),
-            ChangeKind::Added(new) => new_map.insert(key.to_string(), Node::Leaf(new.clone())),
-            ChangeKind::StructureRemoved(_) | ChangeKind::Removed(_) => new_map.remove(key),
-            ChangeKind::Modified(_, new) => {
-                new_map.insert(key.to_string(), Node::Leaf(new.clone()))
-            }
+            ChangeKind::NodeAdded(new) => new_map.insert(key.clone(), new.clone()),
+            ChangeKind::Added(new) => new_map.insert(key.clone(), Node::Leaf(new.clone())),
+            ChangeKind::NodeRemoved(_) | ChangeKind::Removed(_) => new_map.remove(key),
+            ChangeKind::Modified(_, new) => new_map.insert(key.clone(), Node::Leaf(new.clone())),
             _ => unreachable!(),
         };
         new_map

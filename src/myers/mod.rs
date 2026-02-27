@@ -81,21 +81,14 @@ fn traceback<T: Eq + Clone>(
         let k = x as isize - y as isize;
         let prev_k = if k == -d {
             k + 1
-        } else if k == d {
+        } else if k == d || trace[d as usize].get(k - 1) + 1 >= trace[d as usize].get(k + 1) {
             k - 1
         } else {
-            if trace[d as usize].get(k - 1) + 1 >= trace[d as usize].get(k + 1) {
-                k - 1
-            } else {
-                k + 1
-            }
+            k + 1
         };
         let prev_x = trace[d as usize].get(prev_k);
         let prev_y = prev_x as isize - prev_k;
-        while x as isize > prev_x as isize
-            && y as isize > prev_y as isize
-            && old[x - 1] == new[y - 1]
-        {
+        while x as isize > prev_x as isize && y as isize > prev_y && old[x - 1] == new[y - 1] {
             changes.push(Edit::Equal(old[x - 1].clone()));
             x -= 1;
             y -= 1;
@@ -107,7 +100,7 @@ fn traceback<T: Eq + Clone>(
                 changes.push(Edit::Insert(new[y - 1].clone()))
             }
         }
-        x = prev_x as usize;
+        x = prev_x;
         y = prev_y as usize;
     }
     while x > 0 && y > 0 {

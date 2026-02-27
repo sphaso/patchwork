@@ -108,25 +108,16 @@ impl FromPatch for Vec<Hunk<String>> {
                     hunks.push(c);
                 }
 
-                match parse_hunk_header(e) {
-                    Ok((old_start, new_start)) => {
-                        current = Some(Hunk {
-                            old_start,
-                            new_start,
-                            changes: vec![],
-                        });
-                    }
-                    Err(PatchError::InvalidFormat(err)) => {
-                        return Err(PatchError::InvalidFormat(err))
-                    }
-                    _ => unreachable!(),
-                }
+                let (old_start, new_start) = parse_hunk_header(e)?;
+                current = Some(Hunk {
+                    old_start,
+                    new_start,
+                    changes: vec![],
+                });
+            } else if let Some(ref mut c) = current {
+                c.changes.push(Edit::from_patch(e)?);
             } else {
-                if let Some(ref mut c) = current {
-                    c.changes.push(Edit::from_patch(e)?);
-                } else {
-                    return Err(PatchError::InvalidFormat(e.to_string()));
-                }
+                return Err(PatchError::InvalidFormat(e.to_string()));
             }
         }
 

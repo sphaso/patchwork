@@ -16,9 +16,9 @@ pub enum PathSegment {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum ChangeKind<P: Primitive> {
     Added(P),
-    StructureAdded(Node<P>),
+    NodeAdded(Node<P>),
     Removed(P),
-    StructureRemoved(Node<P>),
+    NodeRemoved(Node<P>),
     Modified(P, P), // old, new
     SequenceChange(Vec<Edit<Node<P>>>),
 }
