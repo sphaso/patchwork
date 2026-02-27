@@ -9,7 +9,7 @@ pub trait FromPatch: Sized {
     fn from_patch(s: &str) -> Result<Self, PatchError>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum PatchError {
     InvalidFormat(String),
     UnexpectedToken(String),

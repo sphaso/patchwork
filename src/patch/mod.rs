@@ -2,6 +2,7 @@ mod types;
 pub use types::*;
 
 use crate::myers::Edit;
+use crate::serialization::PatchError;
 use std::collections::VecDeque;
 
 struct HunkBuilder<T> {
@@ -87,6 +88,65 @@ pub fn hunks<T: Eq + Clone>(edits: Vec<Edit<T>>) -> Vec<Hunk<T>> {
     builder.finish()
 }
 
+pub fn apply(old: &[String], hunks: &[Hunk<String>]) -> Result<Vec<String>, PatchError> {
+    if old.is_empty() {
+        return Ok(hunks
+            .into_iter()
+            .flat_map(|h| h.changes.iter())
+            .filter_map(|e| match e {
+                Edit::Insert(t) => Some(t.clone()),
+                _ => None,
+            })
+            .collect());
+    }
+
+    if hunks.is_empty() {
+        return Ok(old.to_vec());
+    }
+
+    let mut result = vec![];
+    let mut hunk_iter = hunks.iter().peekable();
+    let mut old_line = 0;
+
+    while old_line < old.len() {
+        if let Some(hunk) = hunk_iter.peek() {
+            if old_line == hunk.old_start {
+                for change in &hunk.changes {
+                    match change {
+                        Edit::Equal(t) => {
+                            if old[old_line] != *t {
+                                return Err(PatchError::InvalidFormat(format!(
+                                    "Context mismatch at line {}: expected '{}', found '{}'",
+                                    old_line, t, old[old_line]
+                                )));
+                            }
+                            result.push(old[old_line].clone());
+                            old_line += 1;
+                        }
+                        Edit::Insert(t) => {
+                            result.push(t.clone());
+                        }
+                        Edit::Delete(_) => {
+                            old_line += 1;
+                        }
+                    }
+                }
+                hunk_iter.next();
+            } else if old_line < hunk.old_start {
+                result.push(old[old_line].clone());
+                old_line += 1;
+            } else {
+                return Err(PatchError::InvalidFormat("Cannot apply hunks".to_string()));
+            }
+        } else {
+            result.push(old[old_line].clone());
+            old_line += 1;
+        }
+    }
+
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -111,6 +171,17 @@ mod tests {
                     prop_assert!(all_hunk_edits.contains(edit));
                 }
             }
+        }
+
+        #[test]
+        fn test_apply_roundtrip(
+                    old in prop::collection::vec(".*", 0..20usize),
+        new in prop::collection::vec(".*", 0..20usize),
+            ) {
+            let edits = diff(&old, &new);
+            let hunks = hunks(edits.clone());
+            let result = apply(&old, &hunks);
+            assert_eq!(result, Ok(new));
         }
     }
 
@@ -215,5 +286,60 @@ mod tests {
         let edits = diff(&old, &old);
         let result = hunks(edits);
         assert_eq!(result, vec![]);
+    }
+
+    #[test]
+    fn test_apply_change_in_middle() {
+        let old = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+            "e".to_string(),
+        ];
+        let new = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "X".to_string(),
+            "d".to_string(),
+            "e".to_string(),
+        ];
+        let edits = diff(&old, &new);
+        let hunks = hunks(edits);
+        let result = apply(&old, &hunks);
+        assert_eq!(result, Ok(new));
+    }
+
+    #[test]
+    fn test_apply_multiple_hunks() {
+        let old = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+        let new = vec!["X", "b", "c", "d", "e", "f", "g", "h", "i", "Y"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+        let edits = diff(&old, &new);
+        let hunks = hunks(edits);
+        let result = apply(&old, &hunks);
+        assert_eq!(result, Ok(new));
+    }
+
+    #[test]
+    fn test_apply_invalid_patch() {
+        let old = vec!["a".to_string(), "b".to_string(), "c".to_string()];
+        let bad_hunk = Hunk {
+            old_start: 0,
+            new_start: 0,
+            changes: vec![
+                Edit::Equal("x".to_string()), // but old[0] is "a", mismatch!
+                Edit::Delete("y".to_string()),
+                Edit::Insert("z".to_string()),
+            ],
+        };
+
+        let result = apply(&old, &[bad_hunk]);
+        assert!(result.is_err());
     }
 }
