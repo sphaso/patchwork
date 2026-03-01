@@ -83,8 +83,8 @@ impl<T: Eq + Clone> HunkBuilder<T> {
 
 /// Generates hunks from a Myers Diff
 /// ```
-///  use patchwork::myers::{diff, Edit};
-///  use patchwork::patch::{Hunk, hunks};
+///  use diffkit::myers::{diff, Edit};
+///  use diffkit::patch::{Hunk, hunks};
 ///
 ///  let old = vec![1, 2, 3];
 ///  let new = vec![1, 2, 99];
@@ -118,8 +118,8 @@ pub fn hunks<T: Eq + Clone>(edits: Vec<Edit<T>>) -> Vec<Hunk<T>> {
 /// Returns [`PatchError::InvalidFormat`] if a hunk's context lines don't match
 /// the corresponding lines in `old`, or if hunks cannot be applied in order.
 /// ```
-///  use patchwork::myers::{diff, Edit};
-///  use patchwork::patch::{apply, Hunk};
+///  use diffkit::myers::{diff, Edit};
+///  use diffkit::patch::{apply, Hunk};
 ///
 ///  let old = vec!["a".to_string(), "b".to_string(), "c".to_string()];
 ///  let bad_hunk = Hunk {

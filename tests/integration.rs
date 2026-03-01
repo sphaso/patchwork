@@ -1,4 +1,4 @@
-use patchwork::recursive::*;
+use diffkit::recursive::*;
 use proptest::prelude::*;
 use std::collections::HashMap;
 

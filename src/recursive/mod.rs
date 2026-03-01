@@ -11,7 +11,7 @@ use std::collections::{HashMap, HashSet};
 /// Builds a list of changes for two nodes.
 /// ```
 /// use std::collections::HashMap;
-/// use patchwork::recursive::{diff, Change, PathSegment, ChangeKind};
+/// use diffkit::recursive::{diff, Change, PathSegment, ChangeKind};
 ///
 /// let mut a = HashMap::new();
 /// a.insert("a".to_string(), 1);

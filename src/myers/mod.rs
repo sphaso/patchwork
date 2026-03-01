@@ -39,7 +39,7 @@ pub fn diff_lines(old: &str, new: &str) -> Diff<String> {
 /// # Examples
 ///
 /// ```
-/// use patchwork::myers::{diff, Edit};
+/// use diffkit::myers::{diff, Edit};
 ///
 /// let old = vec![1, 2, 3];
 /// let new = vec![1, 3, 4];

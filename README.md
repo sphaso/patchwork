@@ -1,6 +1,6 @@
-# patchwork
+# diffkit
 
-[![Build Status](https://github.com/sphaso/patchwork/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sphaso/patchwork/actions/workflows/ci.yml)
+[![Build Status](https://github.com/sphaso/diffkit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sphaso/diffkit/actions/workflows/ci.yml)
 
 A Rust library for diffing and patching sequences and nested structures.
 
@@ -16,7 +16,7 @@ A Rust library for diffing and patching sequences and nested structures.
 Add to your `Cargo.toml`:
 ```toml
 [dependencies]
-patchwork = "0.1.0"
+diffkit = "0.1.0"
 ```
 
 ## Usage
@@ -24,9 +24,9 @@ patchwork = "0.1.0"
 ### Sequence diff
 
 ```rust
-use patchwork::myers::diff;
-use patchwork::patch::{apply, hunks};
-use patchwork::serialization::ToPatch;
+use diffkit::myers::diff;
+use diffkit::patch::{apply, hunks};
+use diffkit::serialization::ToPatch;
 
 let old = vec!["hello", "world"];
 let new = vec!["hello", "rust"];
@@ -37,8 +37,8 @@ let myers_edits = diff(&old, &new);
 
 ```rust
 use std::collections::HashMap;
-use patchwork::recursive::{apply, diff};
-use patchwork::patch::hunks;
+use diffkit::recursive::{apply, diff};
+use diffkit::patch::hunks;
 
 let mut old = HashMap::new();
 old.insert("Hello".to_string(), 1);
@@ -52,9 +52,9 @@ let equal_to_new = apply(&old, &changes);
 ### Applying a patch
 
 ```rust
-use patchwork::myers::diff;
-use patchwork::patch::{apply, hunks};
-use patchwork::serialization::ToPatch;
+use diffkit::myers::diff;
+use diffkit::patch::{apply, hunks};
+use diffkit::serialization::ToPatch;
 
 let old = vec!["hello", "world"];
 let new = vec!["hello", "rust"];

@@ -1,4 +1,4 @@
-//! # patchwork
+//! # diffkit
 //!
 //! A library for diffing and patching sequences and nested structures.
 //!
@@ -18,9 +18,9 @@
 //! `apply(&old, hunks(diff(&old, &new))) == Ok(new)`
 //!
 //! ```rust
-//! use patchwork::myers::diff;
-//! use patchwork::patch::{apply, hunks};
-//! use patchwork::serialization::ToPatch;
+//! use diffkit::myers::diff;
+//! use diffkit::patch::{apply, hunks};
+//! use diffkit::serialization::ToPatch;
 //!
 //! let old = vec!["hello", "world"];
 //! let new = vec!["hello", "rust"];
@@ -41,8 +41,8 @@
 //!
 //! ```rust
 //! use std::collections::HashMap;
-//! use patchwork::recursive::{apply, diff};
-//! use patchwork::patch::hunks;
+//! use diffkit::recursive::{apply, diff};
+//! use diffkit::patch::hunks;
 //!
 //! let mut old = HashMap::new();
 //! old.insert("Hello".to_string(), 1);
