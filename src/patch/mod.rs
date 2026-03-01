@@ -62,7 +62,7 @@ impl<T: Eq + Clone> HunkBuilder<T> {
                         old_start,
                         new_start,
                         changes,
-                    });
+                    })
                 };
 
                 match modify {
@@ -111,7 +111,12 @@ pub fn hunks<T: Eq + Clone>(edits: Vec<Edit<T>>) -> Vec<Hunk<T>> {
 }
 
 /// Applies a list of hunks to an input
-/// Can return a PatchError in case of mismatches between hunks and input
+/// Can return a [`PatchError`] in case of mismatches between hunks and input.
+///
+/// # Errors
+///
+/// Returns [`PatchError::InvalidFormat`] if a hunk's context lines don't match
+/// the corresponding lines in `old`, or if hunks cannot be applied in order.
 /// ```
 ///  use patchwork::myers::{diff, Edit};
 ///  use patchwork::patch::{apply, Hunk};
@@ -154,33 +159,37 @@ pub fn apply<T: PartialEq + Display + Clone>(
 
     while old_line < old.len() {
         if let Some(hunk) = hunk_iter.peek() {
-            if old_line == hunk.old_start {
-                for change in &hunk.changes {
-                    match change {
-                        Edit::Equal(t) => {
-                            if old[old_line] != *t {
-                                return Err(PatchError::InvalidFormat(format!(
-                                    "Context mismatch at line {}: expected '{}', found '{}'",
-                                    old_line, t, old[old_line]
-                                )));
+            match old_line.cmp(&hunk.old_start) {
+                std::cmp::Ordering::Equal => {
+                    for change in &hunk.changes {
+                        match change {
+                            Edit::Equal(t) => {
+                                if old[old_line] != *t {
+                                    return Err(PatchError::InvalidFormat(format!(
+                                        "Context mismatch at line {}: expected '{}', found '{}'",
+                                        old_line, t, old[old_line]
+                                    )));
+                                }
+                                result.push(old[old_line].clone());
+                                old_line += 1;
                             }
-                            result.push(old[old_line].clone());
-                            old_line += 1;
-                        }
-                        Edit::Insert(t) => {
-                            result.push(t.clone());
-                        }
-                        Edit::Delete(_) => {
-                            old_line += 1;
+                            Edit::Insert(t) => {
+                                result.push(t.clone());
+                            }
+                            Edit::Delete(_) => {
+                                old_line += 1;
+                            }
                         }
                     }
+                    hunk_iter.next();
                 }
-                hunk_iter.next();
-            } else if old_line < hunk.old_start {
-                result.push(old[old_line].clone());
-                old_line += 1;
-            } else {
-                return Err(PatchError::InvalidFormat("Cannot apply hunks".to_string()));
+                std::cmp::Ordering::Less => {
+                    result.push(old[old_line].clone());
+                    old_line += 1;
+                }
+                std::cmp::Ordering::Greater => {
+                    return Err(PatchError::InvalidFormat("Cannot apply hunks".to_string()));
+                }
             }
         } else {
             result.push(old[old_line].clone());

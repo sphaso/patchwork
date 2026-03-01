@@ -18,14 +18,20 @@ pub trait ToPatch: Sized {
 ///
 /// Implemented for `Edit<String>` and `Vec<Hunk<String>>`.
 pub trait FromPatch: Sized {
+    /// Parse a unified diff patch string into a structured representation.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PatchError::InvalidFormat`] if the patch header is missing or malformed.
+    /// Returns [`PatchError::UnexpectedToken`] if a line starts with an unexpected character.
     fn from_patch(s: &str) -> Result<Self, PatchError>;
 }
 
-/// Represents an error parsing or applying a diff
+/// Represents an error parsing or applying a diff.
 #[derive(Debug, PartialEq)]
 pub enum PatchError {
-    /// The patch is structurally invalid, e.g. missing `---`/`+++` header.
-    /// The patch cannot be applied to the given structure.
+    /// The patch is structurally invalid, e.g. missing `---`/`+++` header,
+    /// or the patch cannot be applied to the given structure.
     InvalidFormat(String),
     /// A line in the patch starts with an unexpected character.
     UnexpectedToken(String),
@@ -92,7 +98,8 @@ impl<T: ToString> ToPatch for Vec<Hunk<T>> {
         let hunks = self
             .iter()
             .map(|h| h.to_patch(None, None))
-            .collect::<String>();
+            .collect::<Vec<String>>()
+            .join("\n");
         format!("{}{}", header, hunks)
     }
 }
@@ -186,5 +193,43 @@ mod tests {
 
             prop_assert_eq!(Vec::<Hunk<String>>::from_patch(&patch).unwrap(), hunks);
         }
+    }
+
+    #[test]
+    fn test_multi_hunk_patch_format() {
+        let old: Vec<&str> = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"];
+        let new: Vec<&str> = vec!["X", "b", "c", "d", "e", "f", "g", "h", "i", "Y"];
+        let edits = diff(&old, &new);
+        let h = hunks(edits);
+        assert_eq!(h.len(), 2, "expected 2 hunks");
+        let patch = h.to_patch(Some("old.txt"), Some("new.txt"));
+        // Each @@ header must start on its own line
+        for line in patch.lines() {
+            if line.starts_with("@@") || line.starts_with("---") || line.starts_with("+++") {
+                continue;
+            }
+            assert!(
+                !line.contains("@@"),
+                "@@ header is not on its own line: {:?}",
+                line
+            );
+        }
+    }
+
+    #[test]
+    fn test_multi_hunk_roundtrip() {
+        let old: Vec<String> = vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+            .into_iter()
+            .map(String::from)
+            .collect();
+        let new: Vec<String> = vec!["X", "b", "c", "d", "e", "f", "g", "h", "i", "Y"]
+            .into_iter()
+            .map(String::from)
+            .collect();
+        let edits = diff(&old, &new);
+        let h = hunks(edits);
+        let patch = h.to_patch(Some("old.txt"), Some("new.txt"));
+        let parsed = Vec::<Hunk<String>>::from_patch(&patch).unwrap();
+        assert_eq!(parsed, h);
     }
 }
