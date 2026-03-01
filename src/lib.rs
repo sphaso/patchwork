@@ -12,7 +12,7 @@
 //! ## Quick Start
 //!
 //! A simple Vec of primitives can be diffed using Myers algorithm.
-//! The diff can be transformed into a series of [`Hunk`]s.
+//! The diff can be transformed into a series of [`patch::Hunk`]s.
 //! Hunks can be transformed into a textual diff or applied to an input.
 //!
 //! `apply(&old, hunks(diff(&old, &new))) == Ok(new)`
@@ -33,7 +33,7 @@
 //! ```
 //!
 //! For nested structures a recursive diffing algorithm is provided.
-//! The diff will return a list of [`Change`]s.
+//! The diff will return a list of [`recursive::Change`]s.
 //! Changes can be transformed into Hunks and applied.
 //! Changes cannot be serialized, since there is no consensus on a textual format.
 //!

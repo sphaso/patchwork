@@ -29,8 +29,8 @@ impl V {
 /// Computes the diff between two strings after breaking them into newlines
 /// and running `diff`.
 pub fn diff_lines(old: &str, new: &str) -> Diff<String> {
-    let old_lines: Vec<String> = old.split('\n').map(|l| l.to_string()).collect();
-    let new_lines: Vec<String> = new.split('\n').map(|l| l.to_string()).collect();
+    let old_lines: Vec<String> = old.split('\n').map(ToString::to_string).collect();
+    let new_lines: Vec<String> = new.split('\n').map(ToString::to_string).collect();
     diff(&old_lines, &new_lines)
 }
 
@@ -125,9 +125,9 @@ fn traceback<T: Eq + Clone>(
         }
         if d > 0 {
             if prev_k == k - 1 {
-                changes.push(Edit::Delete(old[x - 1].clone()))
+                changes.push(Edit::Delete(old[x - 1].clone()));
             } else {
-                changes.push(Edit::Insert(new[y - 1].clone()))
+                changes.push(Edit::Insert(new[y - 1].clone()));
             }
         }
         x = prev_x;
